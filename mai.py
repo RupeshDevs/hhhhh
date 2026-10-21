@@ -1,0 +1,1262 @@
+import os, webbrowser, threading
+
+from flask import Flask
+
+
+
+app = Flask(__name__)
+
+
+
+HTML = r"""
+
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="utf-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>CowFarm — OwO Cowoncy Console</title>
+
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+
+:root{--bg:#0e110b;--panel:#151910;--panel2:#1a2013;--line:#2b331e;--line2:#222a15;--txt:#e9eedd;--dim:#8d9878;--faint:#5a654c;--green:#a3e05c;--green-d:#6fae35;--amber:#ffc95c;--amber-d:#c79a3a;--red:#ff6a5e;--mono:"JetBrains Mono",monospace;--sans:"Space Grotesk",sans-serif}
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+body{min-height:100vh;background:var(--bg);color:var(--txt);font-family:var(--sans);background-image:radial-gradient(rgba(163,224,92,.035) 1px,transparent 1.5px);background-size:26px 26px}
+
+::selection{background:var(--green);color:#15230a}
+
+header{display:flex;justify-content:space-between;align-items:center;padding:16px 28px;border-bottom:1px solid var(--line2)}
+
+.brand{display:flex;align-items:center;gap:12px}
+
+.brand svg{width:30px;height:30px;stroke:var(--amber);fill:none;stroke-width:1.6}
+
+.bname{font-weight:700;font-size:17px;letter-spacing:.14em}
+
+.bsub{font-family:var(--mono);font-size:10px;color:var(--faint);letter-spacing:.1em}
+
+.h-right{display:flex;align-items:center;gap:14px}
+
+.userchip{display:flex;align-items:center;gap:9px;padding:6px 12px 6px 6px;border:1px solid var(--line2);border-radius:99px;background:var(--panel)}
+
+.userchip img{width:26px;height:26px;border-radius:50%;background:var(--panel2)}
+
+.userchip .un{font-family:var(--mono);font-size:12px;color:var(--dim)}
+
+.pill{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;color:var(--dim);border:1px solid var(--line2);border-radius:99px;padding:6px 12px;background:var(--panel)}
+
+.pill .dot{width:7px;height:7px;border-radius:50%;background:var(--faint)}
+
+.pill.on .dot{background:var(--green);animation:pulse 1.6s infinite}
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+main{max-width:1280px;margin:0 auto;padding:28px 28px 70px}
+
+.panel{background:var(--panel);border:1px solid var(--line2);border-radius:16px}
+
+.phead{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--line2);font-size:11px;letter-spacing:.16em;color:var(--dim);font-weight:600}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:var(--sans);font-weight:600;font-size:13px;border-radius:10px;cursor:pointer;border:1px solid transparent;padding:11px 20px;letter-spacing:.03em}
+
+.btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2}
+
+.btn:disabled{opacity:.5;cursor:default}
+
+.btn-p{background:var(--green);color:#15230a}
+
+.btn-p:hover:not(:disabled){background:#b6f074}
+
+.btn-g{background:transparent;border-color:var(--line);color:var(--txt)}
+
+.btn-g:hover:not(:disabled){border-color:var(--green-d);color:var(--green)}
+
+.btn-r{background:transparent;border-color:var(--line);color:var(--red)}
+
+.btn-r:hover{border-color:var(--red)}
+
+.input,.select{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--txt);font-family:var(--mono);font-size:13px;padding:12px 14px;outline:none}
+
+.input:focus,.select:focus{border-color:var(--green-d)}
+
+.input.bad{border-color:var(--red)}
+
+.field{display:flex;flex-direction:column;gap:7px;margin-bottom:16px}
+
+.label{font-size:11px;font-weight:600;letter-spacing:.14em;color:var(--dim)}
+
+.hint{font-family:var(--mono);font-size:11px;color:var(--faint);line-height:1.6}
+
+#view-setup{max-width:480px;margin:6vh auto 0}
+
+.step{padding:26px}
+
+.step+.step{margin-top:18px}
+
+.stepnum{font-family:var(--mono);font-size:11px;color:var(--green);letter-spacing:.2em;margin-bottom:4px}
+
+h1{font-size:24px;margin-bottom:4px}
+
+.stepsub{color:var(--dim);font-size:13px;margin-bottom:22px;line-height:1.55}
+
+.pwwrap{position:relative}
+
+.pwwrap .input{padding-right:44px}
+
+.eyebtn{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:8px;color:var(--faint)}
+
+.eyebtn:hover{color:var(--dim)}
+
+.eyebtn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7}
+
+.remember{display:flex;align-items:center;gap:8px;margin:2px 0 18px;font-size:12px;color:var(--dim);cursor:pointer;user-select:none}
+
+.remember input{accent-color:var(--green)}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+.wfull{width:100%}
+
+.farm-grid{display:grid;grid-template-columns:280px minmax(0,1fr);gap:18px;align-items:start}
+
+.col-main{display:flex;flex-direction:column;gap:18px}
+
+.log-panel{grid-column:2}
+
+.frame{display:flex;flex-direction:column;gap:18px;grid-row:1/3}
+
+.side-body{padding:8px 20px 18px}
+
+.kv{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--line2);font-size:12px}
+
+.kv:last-child{border-bottom:none}
+
+.kv .k{color:var(--dim);font-size:11px;font-weight:600;letter-spacing:.08em}
+
+.kv .v{font-family:var(--mono);font-size:12px;color:var(--txt);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.controls{display:flex;flex-direction:column;gap:10px;padding:16px 20px 20px}
+
+.controls .btn{justify-content:flex-start}
+
+.captcha{border:1px solid var(--amber-d);background:rgba(255,201,92,.06);border-radius:16px;padding:18px 20px}
+
+.captcha h4{color:var(--amber);font-size:13px;letter-spacing:.1em;margin-bottom:8px}
+
+.captcha p{font-size:12px;color:var(--dim);line-height:1.6;margin-bottom:14px}
+
+.bal-body{padding:26px 30px 24px}
+
+.bal-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+
+.chchip{font-family:var(--mono);font-size:11px;color:var(--dim);border:1px solid var(--line2);padding:5px 10px;border-radius:99px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.odo{display:flex;align-items:flex-end;font:800 clamp(56px,9vw,110px)/1 var(--mono);color:var(--amber);letter-spacing:-.02em;height:1.05em}
+
+.odo.flash{animation:ofl .7s}
+
+@keyframes ofl{0%{color:#8ff05a}100%{color:var(--amber)}}
+
+.odo-dg{height:1em;overflow:hidden;display:inline-block}
+
+.odo-roll{display:flex;flex-direction:column;transition:transform .55s cubic-bezier(.16,1,.3,1)}
+
+.odo-roll span{height:1em;display:block;text-align:center}
+
+.odo-cm{display:inline-block;color:var(--amber-d)}
+
+.deltarow{display:flex;align-items:center;gap:14px;margin-top:10px;font-family:var(--mono);font-size:13px}
+
+.delta{padding:5px 12px;border-radius:8px;border:1px solid var(--line);color:var(--dim)}
+
+.delta.pos{color:var(--green);border-color:rgba(163,224,92,.35)}
+
+.delta.neg{color:var(--red);border-color:rgba(255,106,94,.35)}
+
+.delsub{color:var(--faint);font-size:11px}
+
+.chartbox{margin-top:22px}
+
+.chartbox canvas{width:100%;height:130px;display:block}
+
+.ledger{display:flex;flex-wrap:wrap}
+
+.li{flex:1 1 140px;padding:18px 22px;border-left:1px solid var(--line2);min-width:130px}
+
+.li:first-child{border-left:none}
+
+.lin{font:700 26px var(--mono);color:var(--txt)}
+
+.li .label{margin-top:5px}
+
+.log-body{height:300px;overflow-y:auto;padding:12px 16px;font-family:var(--mono);font-size:11.5px}
+
+.log-body::-webkit-scrollbar{width:8px}
+
+.log-body::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+
+.lrow{display:flex;gap:10px;padding:4px 6px;border-radius:6px;line-height:1.5;word-break:break-word}
+
+.lrow:hover{background:var(--panel2)}
+
+.lt{color:var(--faint);flex-shrink:0}
+
+.lg{flex-shrink:0;width:42px;font-weight:700}
+
+.lx{color:#c9d1b4;white-space:pre-wrap}
+
+.k-send .lg{color:var(--green)}.k-sys .lg{color:var(--dim)}.k-sys .lx{color:var(--dim)}
+
+.k-err .lg{color:var(--red)}.k-err .lx{color:#ffb3ac}
+
+.k-warn .lg{color:var(--amber)}.k-warn .lx{color:#ffe3ab}
+
+.k-owo .lg{color:var(--amber-d)}
+
+#toasts{position:fixed;bottom:22px;right:22px;display:flex;flex-direction:column;gap:10px;z-index:99}
+
+.toast{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--green);border-radius:10px;padding:12px 16px;font-size:13px;max-width:340px;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+
+.toast.t-err{border-left-color:var(--red)}
+
+.toast.t-warn{border-left-color:var(--amber)}
+
+.toast svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;color:var(--green)}
+
+.toast.t-err svg{color:var(--red)}
+
+.toast.t-warn svg{color:var(--amber)}
+
+@media(max-width:980px){.farm-grid{grid-template-columns:1fr}.frame{grid-row:auto}.log-panel{grid-column:1}header{flex-wrap:wrap;gap:10px}}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+  <div class="brand">
+
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.3 9.3c1.6 1.2 3.8-.4 5.4 0"/></svg>
+
+    <div><div class="bname">COWFARM</div><div class="bsub">owobot · cowoncy console</div></div>
+
+  </div>
+
+  <div class="h-right">
+
+    <span class="pill" id="gw-pill"><span class="dot"></span><span id="gw-txt">idle</span></span>
+
+    <div class="userchip" id="userchip" hidden><img id="u-av" alt=""><span class="un" id="u-name"></span></div>
+
+  </div>
+
+</header>
+
+<main>
+
+<section id="view-setup">
+
+  <div class="panel step">
+
+    <div class="stepnum">01 / TOKEN</div>
+
+    <h1>Plug in your account</h1>
+
+    <p class="stepsub">Everything runs locally in this browser tab.</p>
+
+    <div class="field">
+
+      <span class="label">DISCORD ACCOUNT TOKEN</span>
+
+      <div class="pwwrap">
+
+        <input class="input" id="f-token" type="password" placeholder="paste your user token here..." spellcheck="false" autocomplete="off">
+
+        <button class="eyebtn" id="btn-eye" title="show / hide"><svg viewBox="0 0 24 24" id="eye-ico"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+
+      </div>
+
+      <span class="hint">A Discord user token, not a bot token.</span>
+
+    </div>
+
+    <label class="remember"><input type="checkbox" id="f-remember"> remember token on this device</label>
+
+    <button class="btn btn-p wfull" id="btn-validate">Validate token</button>
+
+  </div>
+
+  <div class="panel step" id="step2" hidden>
+
+    <div class="stepnum">02 / TARGET</div>
+
+    <h1>Choose the pasture</h1>
+
+    <p class="stepsub">Pick a server + channel where the OwO bot is active. <strong>Make sure you have run `owo profile` in OwO first!</strong></p>
+
+    <div class="field"><span class="label">SERVER / DM</span><select class="select" id="f-guild"><option>validate token first</option></select></div>
+
+    <div class="field"><span class="label">CHANNEL</span><select class="select" id="f-channel"><option>-</option></select></div>
+
+    <div class="field"><span class="label">OR PASTE A CHANNEL ID</span><input class="input" id="f-chid" placeholder="1234567890123456789 (optional)" spellcheck="false"></div>
+
+    <div class="field" style="margin-top:22px">
+
+      <span class="label">INTERVALS — SECONDS</span>
+
+      <div class="grid2">
+
+        <input class="input" id="f-hunt" type="number" min="5" value="8">
+
+        <input class="input" id="f-battle" type="number" min="8" value="16">
+
+        <input class="input" id="f-cash" type="number" min="30" value="90">
+
+        <input class="input" id="f-pray" type="number" min="60" value="300">
+
+      </div>
+
+    </div>
+
+    <button class="btn btn-p wfull" id="btn-start">Start farming</button>
+
+  </div>
+
+</section>
+
+<section id="view-farm" hidden>
+
+  <div class="farm-grid">
+
+    <aside class="frame">
+
+      <div class="panel"><div class="phead">RUNTIME</div><div class="side-body">
+
+        <div class="kv"><span class="k">GATEWAY</span><span class="v" id="gw-state">-</span></div>
+
+        <div class="kv"><span class="k">LATENCY</span><span class="v" id="lat">-</span></div>
+
+        <div class="kv"><span class="k">UPTIME</span><span class="v" id="up">0s</span></div>
+
+        <div class="kv"><span class="k">STATUS</span><span class="v" id="run-state">farming</span></div>
+
+        <div class="kv"><span class="k">SESSION</span><span class="v" id="started-at">-</span></div>
+
+      </div></div>
+
+      <div class="panel"><div class="phead">CONTROLS</div><div class="controls">
+
+        <button class="btn btn-g" id="btn-pause"><svg viewBox="0 0 24 24" id="pause-ico"><path d="M9 4v16M15 4v16"/></svg><span id="pause-txt">Pause farming</span></button>
+
+        <button class="btn btn-g" id="btn-cashnow"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10"/></svg>Send owo cash now</button>
+        <button class="btn btn-g" id="btn-testowo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>Test OwO response</button>
+
+        <button class="btn btn-r" id="btn-stop"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>Stop session</button>
+
+      </div></div>
+
+      <div class="captcha" id="captcha-box" hidden>
+
+        <h4>CAPTCHA DETECTED</h4>
+
+        <p>OwO wants proof you are human. Solve the captcha in Discord, then resume.</p>
+
+        <button class="btn btn-p wfull" id="btn-resume-captcha">I solved it — resume</button>
+
+      </div>
+
+    </aside>
+
+    <div class="col-main">
+
+      <div class="panel"><div class="bal-body">
+
+        <div class="bal-top"><span class="label">COWONCY BALANCE</span><span class="chchip" id="ch-chip">-</span></div>
+
+        <div class="odo" id="odo"></div>
+
+        <div class="deltarow"><span class="delta" id="delta">awaiting first check...</span><span class="delsub">cowoncy this session</span></div>
+
+        <div class="chartbox"><canvas id="chart"></canvas></div>
+
+      </div></div>
+
+      <div class="panel"><div class="phead">SESSION LEDGER</div><div class="ledger">
+
+        <div class="li"><div class="lin" id="st-hunts">0</div><div class="label">HUNTS</div></div>
+
+        <div class="li"><div class="lin" id="st-battles">0</div><div class="label">BATTLES</div></div>
+
+        <div class="li"><div class="lin" id="st-prays">0</div><div class="label">PRAYS</div></div>
+
+        <div class="li"><div class="lin" id="st-sent">0</div><div class="label">MSGS SENT</div></div>
+
+        <div class="li"><div class="lin" id="st-loot" style="color:var(--amber)">0</div><div class="label">COWONCY LOOT</div></div>
+
+        <div class="li"><div class="lin" id="st-errors" style="color:var(--red)">0</div><div class="label">ERRORS</div></div>
+
+      </div></div>
+
+    </div>
+
+    <div class="panel log-panel"><div class="phead"><span>EVENT LOG</span><button class="btn btn-g" style="padding:5px 12px;font-size:11px" id="btn-clearlog">clear</button></div><div class="log-body" id="log-body"></div></div>
+
+  </div>
+
+</section>
+
+</main>
+
+<div id="toasts"></div>
+
+<script>
+
+var $ = function(s){ return document.querySelector(s); };
+
+var OWO_ID = "408785106942164992";
+
+var API = "https://discord.com/api/v9";
+
+var S = { token:"", user:null, channelId:"", channelLabel:"", ws:null, seq:null, hbT:null, lastHb:0, lat:"-",
+
+  running:false, paused:false, startedAt:0, jobs:[], tick:null, uid:null, dailySent:false, awaitCash:0,
+
+  stats:{ hunts:0, battles:0, prays:0, sent:0, loot:0, errors:0, earned:0, bal:null, startBal:null }, history:[] };
+
+function sleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+
+function fmtN(n){ return Math.round(n).toLocaleString("en-US"); }
+
+function nowT(){ return new Date().toTimeString().slice(0,8); }
+
+var ICOS = {
+
+  ok: '<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>',
+
+  err: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>',
+
+  warn: '<svg viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3z"/></svg>'
+
+};
+
+function toast(msg, type){
+
+  var t = document.createElement("div");
+
+  t.className = "toast t-" + (type || "ok");
+
+  t.innerHTML = ICOS[type || "ok"] + "<span></span>";
+
+  t.querySelector("span").textContent = msg;
+
+  document.getElementById("toasts").appendChild(t);
+
+  setTimeout(function(){ t.classList.add("out"); setTimeout(function(){ t.remove(); }, 320); }, 4200);
+
+}
+
+var logBody = document.getElementById("log-body");
+
+function log(kind, text){
+
+  var row = document.createElement("div");
+
+  row.className = "lrow k-" + kind;
+
+  row.innerHTML = '<span class="lt">' + nowT() + '</span><span class="lg">' + kind.toUpperCase() + '</span><span class="lx"></span>';
+
+  var lx = row.querySelector(".lx");
+
+  lx.textContent = text.length > 220 ? text.slice(0, 220) + "..." : text;
+
+  var stick = logBody.scrollHeight - logBody.scrollTop - logBody.clientHeight < 60;
+
+  logBody.appendChild(row);
+
+  while(logBody.children.length > 250) logBody.firstChild.remove();
+
+  if(stick) logBody.scrollTop = logBody.scrollHeight;
+
+}
+
+var odoEl = document.getElementById("odo");
+
+function digitSlot(){
+
+  var el = document.createElement("span"); el.className = "odo-dg";
+
+  var roll = document.createElement("span"); roll.className = "odo-roll"; roll.style.transform = "translateY(0em)";
+
+  for(var i=0;i<10;i++){ var sp = document.createElement("span"); sp.textContent = i; roll.appendChild(sp); }
+
+  el.appendChild(roll); el._roll = roll;
+
+  return el;
+
+}
+
+function setOdo(value){
+
+  var chars = value == null ? ["-"] : fmtN(value).split("");
+
+  var kids = Array.prototype.slice.call(odoEl.children);
+
+  function isDigit(c){ return c >= "0" && c <= "9"; }
+
+  var ok = kids.length === chars.length;
+
+  if(ok) for(var i=0;i<chars.length;i++) if(isDigit(chars[i]) !== kids[i].classList.contains("odo-dg")){ ok = false; break; }
+
+  if(!ok){
+
+    odoEl.innerHTML = "";
+
+    chars.forEach(function(c){
+
+      if(isDigit(c)) odoEl.appendChild(digitSlot());
+
+      else { var e = document.createElement("span"); e.className = "odo-cm"; e.textContent = c; odoEl.appendChild(e); }
+
+    });
+
+    kids = Array.prototype.slice.call(odoEl.children);
+
+  }
+
+  chars.forEach(function(c,i){ if(isDigit(c) && kids[i] && kids[i]._roll) kids[i]._roll.style.transform = "translateY(-" + c + "em)"; });
+
+  if(S.stats && S.lastBalVal != null && value != null && value !== S.lastBalVal){
+
+    odoEl.classList.remove("flash"); void odoEl.offsetWidth; odoEl.classList.add("flash");
+
+  }
+
+  S.lastBalVal = value;
+
+}
+
+var chart = document.getElementById("chart");
+
+function drawChart(){
+
+  var ctx = chart.getContext("2d"), dpr = window.devicePixelRatio || 1;
+
+  var w = chart.clientWidth, h = chart.clientHeight;
+
+  if(chart.width !== w*dpr){ chart.width = w*dpr; chart.height = h*dpr; }
+
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h);
+
+  var pts = S.history;
+
+  if(pts.length < 2){
+
+    ctx.fillStyle = "#5a654c"; ctx.font = "12px JetBrains Mono"; ctx.textAlign = "center";
+
+    ctx.fillText("waiting for balance data...", w/2, h/2 + 4);
+
+    return;
+
+  }
+
+  var vals = pts.map(function(p){ return p.v; });
+
+  var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
+
+  if(max - min < 10){ min -= 20; max += 20; }
+
+  var pad = 10, t0 = pts[0].t, t1 = pts[pts.length-1].t;
+
+  function X(t){ return pad + (w-2*pad) * (t-t0) / Math.max(1, t1-t0); }
+
+  function Y(v){ return pad + (h-2*pad) * (1 - (v-min)/(max-min)); }
+
+  ctx.strokeStyle = "rgba(255,201,92,.22)"; ctx.setLineDash([3,5]); ctx.lineWidth = 1;
+
+  ctx.font = "10px JetBrains Mono"; ctx.fillStyle = "#5a654c"; ctx.textAlign = "left";
+
+  [max,min].forEach(function(v){
+
+    ctx.beginPath(); ctx.moveTo(pad-4, Y(v)); ctx.lineTo(w-pad+4, Y(v)); ctx.stroke();
+
+    ctx.fillText(v >= 1000 ? (v/1000).toFixed(1) + "k" : v, w-pad+2, Y(v)+3);
+
+  });
+
+  ctx.setLineDash([]);
+
+  ctx.beginPath();
+
+  pts.forEach(function(p,i){ i ? ctx.lineTo(X(p.t), Y(p.v)) : ctx.moveTo(X(p.t), Y(p.v)); });
+
+  ctx.strokeStyle = "#ffc95c"; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.stroke();
+
+  ctx.lineTo(X(t1), h-pad); ctx.lineTo(X(t0), h-pad); ctx.closePath();
+
+  ctx.fillStyle = "rgba(255,201,92,.08)"; ctx.fill();
+
+  ctx.beginPath(); ctx.arc(X(t1), Y(pts[pts.length-1].v), 3.5, 0, 7); ctx.fillStyle = "#ffc95c"; ctx.fill();
+
+}
+
+function api(path, method, body){
+
+  var opts = { method: method || "GET", headers: { "Authorization": S.token, "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", "X-Super-Properties": btoa(JSON.stringify({os:"Windows",browser:"Chrome",device:"",system_locale:"en-US",browser_user_agent:"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",browser_version:"120.0.0.0",os_version:"10",referrer:"",referring_domain:"",referrer_current:"",referring_domain_current:"",release_channel:"stable",client_build_number:234438,client_event_source:null})) } };
+  if(body){ opts.headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body); }
+
+  return fetch(API + path, opts).then(function(r){
+
+    if(r.status === 429){
+
+      return r.json().catch(function(){ return {}; }).then(function(j){
+
+        return sleep(((j.retry_after || 2) * 1000) + 400).then(function(){
+
+          return fetch(API + path, opts);
+
+        });
+
+      });
+
+    }
+
+    return r;
+
+  });
+
+}
+
+document.getElementById("f-token").addEventListener("input", function(e){ e.target.classList.remove("bad"); });
+
+document.getElementById("btn-eye").addEventListener("click", function(){
+
+  var inp = document.getElementById("f-token");
+
+  var show = inp.type === "password";
+
+  inp.type = show ? "text" : "password";
+
+  document.getElementById("eye-ico").innerHTML = show
+
+    ? '<path d="M3 3l18 18M10.6 10.7a3 3 0 0 0 4.2 4.2"/>'
+
+    : '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/>';
+
+});
+
+document.getElementById("btn-validate").addEventListener("click", async function(){
+
+  var tok = document.getElementById("f-token").value.trim();
+
+  if(!tok){ toast("Paste your account token first."); return; }
+
+  var btn = document.getElementById("btn-validate");
+
+  btn.disabled = true; btn.textContent = "checking...";
+
+  try{
+
+    S.token = tok;
+
+    var r = await api("/users/@me");
+
+    if(r.status === 401 || r.status === 403){
+      document.getElementById("f-token").classList.add("bad");
+      var errBody = ""; try { errBody = await r.text(); } catch(e) {}
+      var msg = "Token rejected by Discord.";
+      if(errBody) { try { var j = JSON.parse(errBody); if(j.message) msg += " (" + j.message + ")"; } catch(e){} }
+      if(r.status === 401) msg += " Make sure you paste a USER token, not a bot token, and that it is still valid.";
+      toast(msg, "err"); return;
+    }
+
+    if(!r.ok) throw new Error("HTTP " + r.status);
+
+    S.user = await r.json();
+
+    if(document.getElementById("f-remember").checked) localStorage.setItem("cowfarm_token", tok);
+
+    var name = (S.user.discriminator && S.user.discriminator !== "0")
+
+      ? S.user.username + "#" + S.user.discriminator : "@" + S.user.username;
+
+    document.getElementById("userchip").hidden = false;
+
+    document.getElementById("u-name").textContent = name;
+
+    document.getElementById("u-av").src = S.user.avatar
+
+      ? "https://cdn.discordapp.com/avatars/" + S.user.id + "/" + S.user.avatar + ".png?size=64"
+
+      : "https://cdn.discordapp.com/embed/avatars/0.png";
+
+    document.getElementById("step2").hidden = false;
+
+    document.getElementById("step2").scrollIntoView({ behavior:"smooth", block:"nearest" });
+
+    toast("Token OK. Hello, " + name);
+
+    await loadTargets();
+
+  }catch(e){
+
+    toast("Could not reach Discord: " + e.message, "err");
+
+  }finally{
+
+    btn.disabled = false; btn.textContent = "Validate token";
+
+  }
+
+});
+
+async function loadTargets(){
+
+  var selG = document.getElementById("f-guild"), selC = document.getElementById("f-channel");
+
+  selG.innerHTML = "<option>loading...</option>";
+
+  try{
+
+    var results = await Promise.all([ api("/users/@me/guilds"), api("/users/@me/channels") ]);
+
+    var guilds = await results[0].json();
+
+    var dms = (await results[1].json()).filter(function(c){ return c.type === 1; });
+
+    selG.innerHTML = "";
+
+    if(dms.length){
+
+      var og = document.createElement("optgroup"); og.label = "direct messages";
+
+      dms.forEach(function(d){
+
+        var o = document.createElement("option");
+
+        o.value = d.id; o.dataset.dm = "1";
+
+        o.textContent = "@" + (d.recipients && d.recipients[0] ? d.recipients[0].username : "unknown");
+
+        og.appendChild(o);
+
+      });
+
+      selG.appendChild(og);
+
+    }
+
+    var ogS = document.createElement("optgroup"); ogS.label = "servers";
+
+    guilds.sort(function(a,b){ return a.name.localeCompare(b.name); }).forEach(function(g){
+
+      var o = document.createElement("option");
+
+      o.value = g.id; o.textContent = g.name;
+
+      ogS.appendChild(o);
+
+    });
+
+    selG.appendChild(ogS);
+
+    if(selG.options.length){ selG.selectedIndex = 0; loadChannels(); }
+
+  }catch(e){
+
+    selG.innerHTML = "<option>failed to load</option>";
+
+    toast("Could not load servers: " + e.message, "err");
+
+  }
+
+}
+
+async function loadChannels(){
+
+  var selG = document.getElementById("f-guild"), selC = document.getElementById("f-channel");
+
+  var opt = selG.selectedOptions[0];
+
+  if(!opt || !opt.value){ selC.innerHTML = "<option>-</option>"; return; }
+
+  selC.innerHTML = "<option>loading...</option>";
+
+  if(opt.dataset.dm){
+
+    selC.innerHTML = "<option value=" + opt.value + ">" + opt.textContent + "</option>";
+
+    return;
+
+  }
+
+  try{
+
+    var r = await api("/guilds/" + opt.value + "/channels");
+
+    var chs = (await r.json()).filter(function(c){ return c.type === 0 || c.type === 5; });
+
+    selC.innerHTML = chs.length
+
+      ? chs.map(function(c){ return '<option value="' + c.id + '"># ' + c.name + "</option>"; }).join("")
+
+      : '<option value="">none found</option>';
+
+  }catch(e){
+
+    selC.innerHTML = "<option>failed</option>";
+
+  }
+
+}
+
+document.getElementById("f-guild").addEventListener("change", loadChannels);
+
+document.getElementById("btn-start").addEventListener("click", function(){
+
+  var manual = document.getElementById("f-chid").value.trim();
+
+  var ch = manual || document.getElementById("f-channel").value;
+
+  if(!ch){ toast("Pick a channel first (or paste a channel ID).", "err"); return; }
+
+  S.channelId = ch;
+
+  var copt = document.getElementById("f-channel").selectedOptions[0];
+
+  S.channelLabel = manual ? "#" + manual : (copt ? copt.textContent : "#" + ch);
+
+  function clamp(v, min, def){ return Math.max(min, (+v || def)); }
+
+  S.jobs = [
+
+    { cmd:"owo hunt",   interval: clamp(document.getElementById("f-hunt").value, 5, 8) * 1000, nextAt: Date.now() + 2000 },
+
+    { cmd:"owo pray",   interval: clamp(document.getElementById("f-pray").value, 60, 300) * 1000, nextAt: Date.now() + 11000 },
+
+    { cmd:"owo cash",   interval: clamp(document.getElementById("f-cash").value, 30, 90) * 1000, nextAt: Date.now() + 14000 }
+
+  ];
+
+  Object.assign(S, {
+
+    running:true, paused:false, startedAt:Date.now(), dailySent:false, awaitCash:0, lastBalVal:null, _hasOwOResponse:false, _warnedNoResponse:false,
+
+    stats:{ hunts:0, battles:0, prays:0, sent:0, loot:0, errors:0, earned:0, bal:null, startBal:null },
+
+    history:[]
+
+  });
+
+  logBody.innerHTML = "";
+
+  log("sys", "session started — target " + S.channelLabel);
+
+  document.getElementById("ch-chip").textContent = S.channelLabel;
+
+  document.getElementById("started-at").textContent = new Date().toLocaleTimeString();
+
+  document.getElementById("captcha-box").hidden = true;
+
+  document.getElementById("view-setup").hidden = true;
+
+  document.getElementById("view-farm").hidden = false;
+
+  setOdo(null); updateDelta(); updateLedger(); drawChart(); setPauseUI();
+
+  connectGateway();
+
+  S.tick = setInterval(masterTick, 1000);
+
+  S.uid  = setInterval(updateUptime, 1000);
+
+});
+
+function masterTick(){
+
+  updateLedger();
+
+  if(!S.running || S.paused) return;
+
+  var now = Date.now();
+
+  if(!S._hasOwOResponse && now - S.startedAt > 30000 && !S._warnedNoResponse){
+    S._warnedNoResponse = true;
+    log("warn", "No OwO response in 30s. Check: 1) OwO bot in this channel? 2) Run 'owo profile' in Discord first 3) Correct channel selected?");
+    toast("No OwO response - check channel & OwO setup", "warn");
+  }
+
+  if(!S.dailySent && now - S.startedAt > 25000){ S.dailySent = true; sendCmd("owo daily"); }
+
+  S.jobs.forEach(function(j){
+
+    if(now >= j.nextAt){
+
+      j.nextAt = now + j.interval * (0.8 + Math.random() * 0.4);
+
+      sendCmd(j.cmd);
+
+    }
+
+  });
+
+}
+
+async function sendCmd(content, force){
+
+  if(!S.running || (S.paused && !force)) return;
+
+  try{
+
+    var r = await api("/channels/" + S.channelId + "/messages", "POST", {
+
+      content: content, nonce: Date.now().toString(36) + Math.floor(Math.random() * 100000), tts: false
+
+    });
+
+    if(r.status === 401){ toast("Token invalidated — stopping.", "err"); stopFarm(); return; }
+
+    if(!r.ok){ S.stats.errors++; log("err", "Discord replied HTTP " + r.status); return; }
+
+    S.stats.sent++;
+
+    log("send", "> " + content);
+
+    if(content === "owo cash") S.awaitCash = 3;
+
+  }catch(e){
+
+    S.stats.errors++; log("err", e.message);
+
+  }
+
+}
+
+function setGw(state, txt){
+
+  var pill = document.getElementById("gw-pill");
+
+  document.getElementById("gw-txt").textContent = txt;
+
+  pill.classList.toggle("on", state === "online" || state === "connecting");
+
+  document.getElementById("gw-state").textContent = txt;
+
+  document.getElementById("gw-state").style.color = state === "online" ? "var(--green)" : (state === "offline" ? "var(--red)" : "var(--amber)");
+
+}
+
+function connectGateway(){
+
+  setGw("connecting", "connecting...");
+
+  try{ S.ws = new WebSocket("wss://gateway.discord.gg/?v=9&encoding=json"); }
+
+  catch(e){ setGw("offline", "offline"); return; }
+
+  S.ws.onmessage = function(e){
+
+    var d = JSON.parse(e.data);
+
+    if(d.s != null) S.seq = d.s;
+
+    if(d.op === 10){
+
+      clearInterval(S.hbT);
+
+      var iv = d.d.heartbeat_interval;
+
+      var hb = function(){ S.lastHb = Date.now(); S.ws.send(JSON.stringify({op:1, d:S.seq})); };
+
+      hb(); S.hbT = setInterval(hb, iv);
+
+      S.ws.send(JSON.stringify({op:2, d:{
+
+        token:S.token,
+
+        properties:{ os:"windows", browser:"firefox", device:"windows" },
+
+        compress:false,
+
+        presence:{ status:"invisible", since:0, activities:[], afk:false }
+
+      }}));
+
+    } else if(d.op === 11){
+
+      setGw("online", "online"); S.lat = (Date.now() - S.lastHb) + "ms";
+
+    } else if(d.op === 0){
+
+      if(d.t === "READY") log("sys", "gateway connected — listening for OwO");
+
+      if(d.t === "MESSAGE_CREATE") onMsg(d.d);
+
+    } else if(d.op === 7){ try{ S.ws.close(4000); }catch(_){} }
+
+    else if(d.op === 9) log("warn", "gateway session invalidated");
+
+  };
+
+  S.ws.onclose = function(){
+
+    clearInterval(S.hbT); setGw("offline", "offline");
+
+    if(S.running){
+
+      log("warn", "gateway closed — reconnecting in 4s");
+
+      setTimeout(function(){ if(S.running) connectGateway(); }, 4000);
+
+    }
+
+  };
+
+}
+
+function onMsg(m){
+
+  if(!S.running) return;
+
+  if(m.author && m.author.id === OWO_ID && m.channel_id === S.channelId){
+    S._hasOwOResponse = true;
+    log("sys", "OwO message received in channel");
+    var text = m.content || "";
+
+    if(m.embeds && m.embeds.length)
+
+      text += " " + m.embeds.map(function(x){ return [x.title, x.description, x.footer && x.footer.text].filter(Boolean).join(" "); }).join(" ");
+
+    handleOwO(text.replace(/\s+/g, " ").trim());
+
+  }
+
+}
+
+function handleOwO(text){
+  log("sys", "OwO replied: " + text.slice(0, 200));
+
+  if(/captcha/i.test(text)){
+
+    S.paused = true; setPauseUI();
+
+    document.getElementById("captcha-box").hidden = false;
+
+    log("warn", "CAPTCHA detected — paused. Solve it in Discord, then resume.");
+
+    toast("OwO captcha detected — paused", "warn");
+
+    return;
+
+  }
+
+  if(S.awaitCash > 0){
+
+    var m = text.match(/([\d,]+)[^\d]{0,12}cowoncy/i);
+
+    if(m){ S.awaitCash = 0; setBalance(parseInt(m[1].replace(/,/g, ""), 10), true); return; }
+
+    S.awaitCash--;
+
+  }
+
+  var low = text.toLowerCase();
+
+  if(/hunt/.test(low)) S.stats.hunts++;
+
+  else if(/battle|fought|enemy/.test(low)) S.stats.battles++;
+
+  else if(/pray/.test(low)) S.stats.prays++;
+
+  var g = text.match(/(?:gained|earned|found)[^\d]{0,14}([\d,]+)/i);
+
+  var l = text.match(/(?:lost|spent)[^\d]{0,10}([\d,]+)/i);
+
+  var inc = 0;
+
+  if(g) inc += parseInt(g[1].replace(/,/g, ""), 10);
+
+  if(l) inc -= parseInt(l[1].replace(/,/g, ""), 10);
+
+  if(inc){ S.stats.loot += inc; if(S.stats.bal != null) setBalance(S.stats.bal + inc, false); }
+
+}
+
+function setBalance(b, authoritative){
+
+  if(S.stats.startBal == null){ S.stats.startBal = b; S.stats.earned = 0; }
+
+  else if(authoritative) S.stats.earned = b - S.stats.startBal;
+
+  S.stats.bal = b;
+
+  S.history.push({ t: Date.now(), v: b });
+
+  if(S.history.length > 720) S.history.shift();
+
+  setOdo(b);
+
+  updateDelta(); drawChart();
+
+}
+
+function fmtDur(ms){
+
+  var s = Math.floor(ms/1000);
+
+  var h = Math.floor(s/3600), m2 = Math.floor((s%3600)/60), ss = s%60;
+
+  return h ? h + "h " + String(m2).padStart(2, "0") + "m" : (m2 ? m2 + "m " + String(ss).padStart(2, "0") + "s" : ss + "s");
+
+}
+
+function updateUptime(){ if(S.running) document.getElementById("up").textContent = fmtDur(Date.now() - S.startedAt); }
+
+function updateLedger(){
+
+  document.getElementById("st-hunts").textContent = fmtN(S.stats.hunts);
+
+  document.getElementById("st-battles").textContent = fmtN(S.stats.battles);
+
+  document.getElementById("st-prays").textContent = fmtN(S.stats.prays);
+
+  document.getElementById("st-sent").textContent = fmtN(S.stats.sent);
+
+  document.getElementById("st-loot").textContent = (S.stats.loot >= 0 ? "" : "-") + fmtN(Math.abs(S.stats.loot));
+
+  document.getElementById("st-errors").textContent = fmtN(S.stats.errors);
+
+  document.getElementById("lat").textContent = S.lat;
+
+}
+
+function updateDelta(){
+
+  var el = document.getElementById("delta");
+
+  if(S.stats.startBal == null){ el.textContent = "awaiting first check..."; el.className = "delta"; return; }
+
+  var e = S.stats.earned;
+
+  el.textContent = (e >= 0 ? "+" : "") + fmtN(e);
+
+  el.className = "delta " + (e >= 0 ? "pos" : "neg");
+
+}
+
+function setPauseUI(){
+
+  document.getElementById("pause-txt").textContent = S.paused ? "Resume farming" : "Pause farming";
+
+  document.getElementById("pause-ico").innerHTML = S.paused ? '<path d="M7 4l13 8-13 8V4z"/>' : '<path d="M9 4v16M15 4v16"/>';
+
+  var rs = document.getElementById("run-state");
+
+  rs.textContent = S.paused ? "paused" : "farming";
+
+  rs.style.color = S.paused ? "var(--amber)" : "var(--green)";
+
+}
+
+document.getElementById("btn-pause").addEventListener("click", function(){
+
+  if(!S.running) return;
+
+  S.paused = !S.paused;
+
+  if(!S.paused) document.getElementById("captcha-box").hidden = true;
+
+  setPauseUI();
+
+});
+
+document.getElementById("btn-cashnow").addEventListener("click", function(){ sendCmd("owo cash", true); });
+document.getElementById("btn-testowo").addEventListener("click", testOwO);
+
+document.getElementById("btn-clearlog").addEventListener("click", function(){ logBody.innerHTML = ""; });
+
+document.getElementById("btn-resume-captcha").addEventListener("click", function(){
+
+  S.paused = false; document.getElementById("captcha-box").hidden = true; setPauseUI();
+
+});
+
+document.getElementById("btn-stop").addEventListener("click", stopFarm);
+
+function testOwO(){
+  if(!S.running){ toast("Start a session first.", "warn"); return; }
+  toast("Sending 'owo' test command...");
+  log("sys", "Testing OwO response in " + S.channelLabel + "...");
+  sendCmd("owo", true);
+  setTimeout(function(){
+    log("sys", "Command sent. Check event log for OwO response. If no response in 10s, OwO may not be in this channel or may be captch-ing you.");
+  }, 3000);
+}
+
+function stopFarm(){
+
+  if(!S.running) return;
+
+  S.running = false; S.paused = false;
+
+  clearInterval(S.tick); clearInterval(S.uid); clearInterval(S.hbT);
+
+  try{ if(S.ws) S.ws.close(4000); }catch(_){}
+
+  log("sys", "session stopped");
+
+  document.getElementById("view-farm").hidden = true;
+
+  document.getElementById("view-setup").hidden = false;
+
+  toast("Session ended. Ledger: +" + fmtN(Math.max(0, S.stats.earned)) + " cowoncy.");
+
+  setGw("off", "idle");
+
+}
+
+window.addEventListener("resize", drawChart);
+
+var saved = localStorage.getItem("cowfarm_token");
+
+if(saved){ document.getElementById("f-token").value = saved; document.getElementById("f-remember").checked = true; }
+
+setOdo(null); drawChart();
+
+</script>
+
+</body>
+
+</html>
+
+"""
+
+
+
+@app.route("/")
+
+def home():
+
+    return HTML
+
+
+
+if __name__ == "__main__":
+
+    port = int(os.environ.get("PORT", 3000))
+
+    webbrowser.open("http://localhost:" + str(port))
+
+    app.run(host="0.0.0.0", port=port)
+
